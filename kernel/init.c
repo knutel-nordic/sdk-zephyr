@@ -310,6 +310,9 @@ static int do_device_init(const struct init_entry *entry)
 	const struct device *dev = entry->dev;
 	int rc = 0;
 
+	#ifndef CONFIG_BOARD_NRF54H20DK_NRF54H20_CPURAD
+	printk("Init device %s\n", dev->name);
+	#endif
 	if (entry->init_fn.dev != NULL) {
 		rc = entry->init_fn.dev(dev);
 		/* Mark device initialized. If initialization
@@ -367,12 +370,22 @@ static void z_sys_init_run_level(enum init_level level)
 		const struct device *dev = entry->dev;
 		int result;
 
+		#ifndef CONFIG_BOARD_NRF54H20DK_NRF54H20_CPURAD
+		printk("sys_trace_sys_init_enter(%d)\n", level);
+		#endif
 		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
 			result = do_device_init(entry);
 		} else {
+		#ifndef CONFIG_BOARD_NRF54H20DK_NRF54H20_CPURAD
+			printk("Init fn: 0x%08x\n", (void*)entry->init_fn.sys);
+			#endif
 			result = entry->init_fn.sys();
 		}
+		#ifndef CONFIG_BOARD_NRF54H20DK_NRF54H20_CPURAD
+
+		printk("sys_trace_sys_init_exit(%d, %d)\n", level, result);
+		#endif
 		sys_trace_sys_init_exit(entry, level, result);
 	}
 }
@@ -535,8 +548,11 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	void z_init_static(void);
 	z_init_static();
 
+	printk("Before INIT_LEVEL_APPLICATION\n");
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
+
+	printk("After INIT_LEVEL_APPLICATION\n");
 
 	z_init_static_threads();
 
@@ -555,6 +571,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_mem_manage_boot_finish();
 #endif /* CONFIG_MMU */
 
+	printk("Before main\n");
 #ifdef CONFIG_BOOTARGS
 	extern int main(int, char **);
 
